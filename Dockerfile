@@ -10,7 +10,7 @@ COPY ./server/package.json /usr/src/app/server
 RUN npm install
 
 # Install server dependencies
-WORKDIR /usr/src/app/server
+WORKDIR /usr/src/app
 COPY package.json /usr/src/app/
 RUN npm install
 

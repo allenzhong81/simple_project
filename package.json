@@ -1,0 +1,14 @@
+{
+  "name": "simple-project",
+  "version": "1.0.0",
+  "description": "Minimalist Node.js Express Application Running on Docker",
+  "author": "",
+  "license": "MIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

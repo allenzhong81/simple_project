@@ -1,0 +1,35 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - apt-get update
+      - apt install jq
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 704029807031.dkr.ecr.ap-southeast-2.amazonaws.com
+      - REPOSITORY_URI=704029807031.dkr.ecr.ap-southeast-2.amazonaws.com/simple-project
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...          
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+  post_build:
+    commands:
+      - echo Build completed
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing definitions file...
+      - TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition my_task_family | jq '.taskDefinition' | jq '.taskDefinitionArn')
+      - TASK_DEFINITION_FILE=$(aws ecs describe-task-definition --task-definition my_task_family)
+      - NEW_TASK_DEFINTIION=$(echo $TASK_DEFINITION_FILE | jq --arg IMAGE "$REPOSITORY_URI:$IMAGE_TAG" '.taskDefinition | .containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn) | del(.revision) | del(.status) | del(.requiresAttributes) | del(.compatibilities)')
+      - echo $NEW_TASK_DEFINTIION > taskdef.json 
+      - envsubst < appspec_template.yaml > appspec.yaml
+artifacts:
+  files:
+    - appspec.yaml
+    - taskdef.json
